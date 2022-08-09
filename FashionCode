@@ -1,0 +1,577 @@
+#### Import Libraries
+import os
+import shutil
+import pandas as pd
+import matplotlib.pyplot as plt
+from PIL import Image
+
+#### Set Path Variables
+main_path = 'C:/Users/LENOVO/PycharmProjects/untitled/'
+data_path = main_path + 'Data' + '/'
+labels_path = main_path + 'Labels' + '/'
+
+#### Process CSVs
+brand_names = ['thefashionstation',
+               
+               
+               'limelight',
+               'zainabchottani',
+               'gulahmedshop',
+               'bonanzasatrangi',
+               'oaks',
+               'zaaviay',
+               'bareeze',
+               'crossstitch',
+               'zellbury',
+               'alkaramstudio',
+               'lawncollection',
+               'chinyere',
+               'needleimpressions']
+#print(brand_names)
+########################################
+
+all_list = []
+labels_dict = {}
+for csv_file in os.listdir(labels_path):
+    df = pd.read_csv(labels_path + csv_file)
+
+    flag = 0
+    for header in df.columns:
+        if flag == 1:
+            break
+
+        if 'href' in header:
+            flag = 1
+
+        if flag == 1:
+
+            href = list(df[header])
+
+            for element in df[header]:
+                if element not in labels_dict:
+                    labels_dict[element] = 0
+
+                labels_dict[element] += 1
+
+all_list = list(labels_dict.keys())
+
+all_clothe_type = []
+for link in all_list:
+    clothe = []
+    href_list = link.split('/')[-1].split('-')
+    for element in href_list:
+        clothe.append(element)
+        all_clothe_type.append(element)
+
+clothe_dict = {}
+for element in all_clothe_type:
+    if element not in clothe_dict:
+        clothe_dict[element] = 0
+
+        clothe_dict[element] += 1
+
+all_unique_clothe = list(clothe_dict.keys())
+all_unique_clothe = [x for x in all_unique_clothe if x.isalpha() == True and len(x) > 2]
+
+to_remove = set(
+    ['pcs', 'olk', 'olek', 'owlk', 'ogekt', 'ogky', 'and', 'off', 'girls', 'ogespk', 'ogspk', 'ogbpk', 'Off',
+     'screen', 'owekt', 'owkt', 'owsp', 'owjkt', 'owec', 'owc', 'owtp', 'owetp', 'owekcn', 'owecnp', 'owskt',
+     'owmkt', 'owkkt', 'owspk', 'owjk', 'three', 'piece', 'two', 'only', 'one', 'new', 'wpw', 'sold', 'per', 'meter',
+     'for', 'woman', 'jwc', 'ips', 'ogkt', 'lrl', 'xsm', 'akpp', 'lws', 'iznik', 'bqu', 'ang', 'mer', 'sar', 'iraj',
+     'dab',
+     'bon', 'dip', 'ecru', 'fete', 'ltd', 'chintz', 'heath', 'almirah', 'jjlk', 'ode', 'gpl', 'behr', 'kahf', 'bazm',
+     'hum',
+     'kut', 'anzac', 'jabeen', 'zariah', 'soorti', 'nate', 'uns', 'hai', 'jlawn', 'otl', 'emel', 'zfl', 'vol', 'ccw',
+     'hsz',
+     'emb', 'les', 'xxs', 'olke', 'onyx', 'ole', 'wgk', 'mor', 'nfe', 'xiv', 'mtf', 'del', 'dcp', 'alp', 'opas',
+     'zar', 'eve', 'givry', 'munin', 'ammi', 'jaan', 'nsni' 'saeed', 'oswah', 'pea', 'ego', 'Top', 'sophia', 'aziz',
+     'tori', 'amna', 'esha', 'edit', 'neha', 'bala', 'makeup', 'owhkh', 'embroidered', 'owkhk', 'gls'])
+
+final_list = list(set(all_unique_clothe) - to_remove)
+#print(final_list)
+
+########################################
+
+def csv_processor(csv_file):
+    df = pd.read_csv(labels_path + csv_file)
+
+    # Image Name
+    image_names_list = []
+    flag = 0
+    for header in df.columns:
+        if flag == 1:
+            break
+
+        if 'src' in header:
+            flag = 1
+
+        if flag == 1:
+            product_urls = df[header]
+            for urls in product_urls:
+                urls = str(urls)
+                url_list = urls.split('/')
+                for component in url_list:
+                    if '.jpg' in component:
+                        clean_component = component.split('?')[0]
+                        clean_component = clean_component.split(' ')[0]
+                        image_names_list.append(clean_component)
+                    elif '.PNG' in component:
+                        clean_component = component.split('?')[0]
+                        clean_component = component.split(' ')[0]
+                        image_names_list.append(clean_component)
+
+    # Product Price
+    price_list = []
+    flag = 0
+    for header in df.columns:
+        if flag == 1:
+            break
+
+        if 'price' in header:
+            flag = 1
+        elif 'money' in header:
+            flag = 1
+        elif 'Price' in header:
+            flag = 1
+        elif 'color' in header:
+            flag = 1
+
+        if flag == 1:
+            price_link_list = df[header]
+
+            for price in price_link_list:
+                price = str(price)
+
+                if price[0] == 'P':
+                    new_price = price.split(' ')[1]
+                elif price[0] == 'R':
+                    new_price = price.split('.')[1]
+                else:
+                    new_price = price
+                ref_new_price_list = new_price.split(',')
+                ref_new_price = float(''.join(ref_new_price_list))
+                price_list.append(ref_new_price)
+
+    # Brand Name
+
+    brand_name_list = []
+
+    csv_name_list = csv_file.split(' ')
+    csv_name_key = csv_name_list[0][:3]
+
+    for name in brand_names:
+        if csv_name_key in name:
+            for _ in range(len(df)):
+                brand_name_list.append(name)
+
+    # Clothe Type
+
+    clothe_type = []
+    flag = 0
+
+    for header in df.columns:
+        if flag == 1:
+            break
+
+        if 'href' in header:
+            flag = 1
+
+        if flag == 1:
+
+            href = list(df[header])
+
+            for link in href:
+                clothe = []
+                href_list = link.split('/')[-1].split('-')
+                if 'embroidered' in href_list:
+                    clothe.append('embroidered')
+                for element in href_list:
+                    if len(element) > 2 and element in final_list:
+                        clothe.append(element)
+
+                if len(clothe) == 0:
+                    this_clothe_type = 'regular apparel'
+                else:
+                    this_clothe_type = ' '.join(clothe)
+
+                clothe_type.append(this_clothe_type)
+
+    return image_names_list, price_list, brand_name_list, clothe_type
+
+
+########################################
+
+all_image_names_list = []
+all_price_list = []
+all_brand_list = []
+all_clothe_list = []
+
+for csv_file in os.listdir(labels_path):
+
+    image_names_list, price_list, brand_name_list, clothe_name_list = csv_processor(csv_file)
+
+    for i in range(len(image_names_list)):
+        if image_names_list[i] not in all_image_names_list:
+            all_image_names_list.append(image_names_list[i])
+            all_price_list.append(price_list[i])
+            all_brand_list.append(brand_name_list[i])
+            all_clothe_list.append(clothe_name_list[i])
+
+########################################
+
+len(all_image_names_list)
+len(all_image_names_list) == len(all_price_list) == len(all_price_list) == len(all_clothe_list)
+
+########################################
+
+list1 = os.listdir(data_path)
+list2 = all_image_names_list
+
+list1_as_set = set(list1)
+intersection = list1_as_set.intersection(list2)
+
+intersection_as_list = list(intersection)
+
+########################################
+
+
+
+
+
+#### Model Implementation
+
+os.chdir(main_path)
+
+import tensorflow
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.layers import GlobalMaxPooling2D
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+import numpy as np
+from numpy.linalg import norm
+import os
+from tqdm import tqdm
+import pickle
+
+model = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+model.trainable = False
+
+model = tensorflow.keras.Sequential([
+    model,
+    GlobalMaxPooling2D()
+])
+
+#print(model.summary())
+model.save('model.h5')
+
+def extract_features(img_path, model):
+    img = image.load_img('sample/61fd5711c812f-8.jpg',target_size=(224, 224))
+    img_array = image.img_to_array(img)
+    expanded_img_array = np.expand_dims(img_array, axis=0)
+    preprocessed_img = preprocess_input(expanded_img_array)
+    result = model.predict(preprocessed_img).flatten()
+    normalized_result = result / norm(result)
+
+    return normalized_result
+#print (os.listdir(all_clothe_list))
+
+filenames = []
+
+for file in intersection_as_list:
+    filenames.append(os.path.join(data_path, file))
+
+feature_list = []
+
+for file in tqdm(intersection_as_list):
+    feature_list.append(extract_features(data_path + file, model))
+print(np.array(feature_list).shape)
+
+pickle.dump(feature_list, open('embeddings.pkl', 'wb'))
+pickle.dump(filenames, open('filenames.pkl', 'wb'))
+
+########################################
+
+
+from pyngrok import ngrok
+
+########################################
+
+import streamlit as st
+import os
+from PIL import Image
+import numpy as np
+import pickle
+import tensorflow
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.layers import GlobalMaxPooling2D
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+from sklearn.neighbors import NearestNeighbors
+from numpy.linalg import norm
+
+feature_list = np.array(pickle.load(open('embeddings.pkl', 'rb')))
+filenames = pickle.load(open('filenames.pkl', 'rb'))
+
+model = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+model.trainable = False
+
+model = tensorflow.keras.Sequential([
+    model,
+    GlobalMaxPooling2D()
+])
+
+st.title('Fashion Recommender System')
+nav=st.sidebar.radio("Navigation",["Home","Prediction","Graph","Comperision","Contact us"])
+if nav=="Home":
+    st.image("fashion.jpg")
+if nav == "Prediction":
+   st.write("")
+
+def save_uploaded_file(uploaded_file):
+    try:
+        with open(os.path.join('uploads', uploaded_file.name), 'wb') as f:
+            f.write(uploaded_file.getbuffer())
+        return 1
+    except:
+        return 0
+
+""""""
+def feature_extraction(img_path, model):
+    img = image.load_img(img_path, target_size=(224, 224))
+    img_array = image.img_to_array(img)
+    expanded_img_array = np.expand_dims(img_array, axis=0)
+    preprocessed_img = preprocess_input(expanded_img_array)
+    result = model.predict(preprocessed_img).flatten()
+    normalized_result = result / norm(result)
+
+    return normalized_result
+
+
+def recommend(features, feature_list):
+    neighbors = NearestNeighbors(n_neighbors=6, algorithm='brute', metric='euclidean')
+    neighbors.fit(feature_list)
+
+    distances, indices = neighbors.kneighbors([features])
+
+    return indices
+
+
+# steps
+# file upload -> save
+
+uploaded_file = st.file_uploader("Choose an image")
+if uploaded_file is not None:
+    if save_uploaded_file(uploaded_file):
+        # display the file
+        display_image = Image.open(uploaded_file)
+        st.image(display_image)
+        # feature extract input_image = data_base[1964]
+        features = feature_extraction(os.path.join("uploads", uploaded_file.name), model)
+        # st.text(features)
+        # recommendention
+        indices = recommend(features, feature_list)
+        # show
+        col1, col2, col3, col4, col5 = st.columns(5)
+
+        with col1:
+            st.image(filenames[indices[0][0]])
+        with col2:
+            st.image(filenames[indices[0][1]])
+        with col3:
+            st.image(filenames[indices[0][2]])
+        with col4:
+            st.image(filenames[indices[0][3]])
+        with col5:
+            st.image(filenames[indices[0][4]])
+    else:
+        st.header("Some error occured in file upload")
+
+########################################
+
+feature_list = np.array(pickle.load(open('embeddings.pkl', 'rb')))
+filenames = pickle.load(open('filenames.pkl', 'rb'))
+
+model = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+model.trainable = False
+
+model = tensorflow.keras.Sequential([
+    model,
+    GlobalMaxPooling2D()
+])
+
+data_base = intersection_as_list
+
+
+########################################
+
+#### Price, Brand and Clothe Prediction
+
+def most_common(lst):
+    return max(set(lst), key=lst.count)
+
+
+def features(filename):
+    new_name = filename.split('/')[-1]
+    i = all_image_names_list.index(new_name)
+    return all_brand_list[i], all_price_list[i], all_clothe_list[i]
+
+
+def clothe_pred(clothe_list):
+    predicted_list = []
+    clothe_0_list = clothe_list[0].split(' ')
+    for element in clothe_0_list:
+        adder = 0
+        for i in range(1, len(clothe_list)):
+            if element in clothe_list[i]:
+                adder += 1
+        if adder >= len(clothe_list) - 4:
+            predicted_list.append(element)
+
+    predicted_str = (' ').join(predicted_list)
+
+    return predicted_str
+
+
+def predictions(indices):
+    price_list = []
+    brand_list = []
+    clothe_list = []
+    for i in range(1, 6):
+        brand, price, clothe = features(filenames[indices[0][i]])
+        price_list.append(price)
+        brand_list.append(brand)
+        clothe_list.append(clothe)
+
+    return most_common(brand_list), np.average(price_list), clothe_pred(clothe_list)
+
+
+########################################
+
+### Input Image (attempt 1)
+
+import cv2
+
+input_image = data_base[1964]
+temp_img = cv2.imread(data_path + input_image)
+cv2.imshow('input_1',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+
+#### Passing Image through Model
+
+img = image.load_img(data_path + input_image, target_size=(224, 224))
+img_array = image.img_to_array(img)
+expanded_img_array = np.expand_dims(img_array, axis=0)
+preprocessed_img = preprocess_input(expanded_img_array)
+result = model.predict(preprocessed_img).flatten()
+normalized_result = result / norm(result)
+
+neighbors = NearestNeighbors(n_neighbors=6, algorithm='brute', metric='euclidean')
+neighbors.fit(feature_list)
+
+distances, indices = neighbors.kneighbors([normalized_result])
+
+print(indices[0][1:])
+
+#### Predictions
+
+temp_img = cv2.imread(filenames[indices[0][1]])
+cv2.imshow('input_2',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+brand, price, clothe = features(filenames[indices[0][1]])
+'Brandname: {}, Clothe Type: {}, Price: {}'.format(brand, clothe, price)
+
+temp_img = cv2.imread(filenames[indices[0][2]])
+cv2.imshow('input_3',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+brand, price, clothe = features(filenames[indices[0][2]])
+'Brandname: {}, Clothe Type: {}, Price: {}'.format(brand, clothe, price)
+
+temp_img = cv2.imread(filenames[indices[0][3]])
+cv2.imshow('input_3',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+brand, price, clothe = features(filenames[indices[0][3]])
+'Brandname: {}, Clothe Type: {}, Price: {}'.format(brand, clothe, price)
+
+temp_img = cv2.imread(filenames[indices[0][4]])
+cv2.imshow('input_3',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+brand, price, clothe = features(filenames[indices[0][4]])
+'Brandname: {}, Clothe Type: {}, Price: {}'.format(brand, clothe, price)
+
+temp_img = cv2.imread(filenames[indices[0][5]])
+cv2.imshow('input_4',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+brand, price, clothe = features(filenames[indices[0][5]])
+'Brandname: {}, Clothe Type: {}, Price: {}'.format(brand, clothe, price)
+
+##### Comparision
+
+brand, price, clothe = predictions(indices)
+print('Predicted brand: {}, Predicted Clothes: {}, Predicted price: {}'.format(brand, clothe, price))
+
+brand, price, clothe = features(data_path + input_image)
+print('Actual brand: {}, Actual Clothes: {}, Actual price: {}'.format(brand, clothe, price))
+
+########################################
+
+### Input Image (attempt 2)
+
+input_image = data_base[420]
+
+temp_img = cv2.imread(data_path + input_image)
+cv2.imshow('input_1',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+
+#### Passing Image through Model
+
+img = image.load_img(data_path + input_image, target_size=(224, 224))
+img_array = image.img_to_array(img)
+expanded_img_array = np.expand_dims(img_array, axis=0)
+preprocessed_img = preprocess_input(expanded_img_array)
+result = model.predict(preprocessed_img).flatten()
+normalized_result = result / norm(result)
+
+neighbors = NearestNeighbors(n_neighbors=6, algorithm='brute', metric='euclidean')
+neighbors.fit(feature_list)
+
+distances, indices = neighbors.kneighbors([normalized_result])
+
+print(indices[0][1:])
+
+#### Predictions
+
+temp_img = cv2.imread(filenames[indices[0][1]])
+cv2.imshow('prediction_1',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+brand, price, clothe = features(filenames[indices[0][1]])
+'Brandname: {}, Clothe Type: {}, Price: {}'.format(brand, clothe, price)
+
+temp_img = cv2.imread(filenames[indices[0][2]])
+cv2.imshow('prediction_2',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+brand, price, clothe = features(filenames[indices[0][2]])
+'Brandname: {}, Clothe Type: {}, Price: {}'.format(brand, clothe, price)
+
+temp_img = cv2.imread(filenames[indices[0][3]])
+cv2.imshow('prediction_3',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+brand, price, clothe = features(filenames[indices[0][3]])
+'Brandname: {}, Clothe Type: {}, Price: {}'.format(brand, clothe, price)
+
+temp_img = cv2.imread(filenames[indices[0][4]])
+cv2.imshow('prediction_4',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+brand, price, clothe = features(filenames[indices[0][4]])
+'Brandname: {}, Clothe Type: {}, Price: {}'.format(brand, clothe, price)
+
+temp_img = cv2.imread(filenames[indices[0][5]])
+cv2.imshow('prediction_5',cv2.resize(temp_img, (512, 512)))
+cv2.waitKey(0)
+brand, price, clothe = features(filenames[indices[0][5]])
+'Brandname: {}, Clothe Type: {}, Price: {}'.format(brand, clothe, price)
+
+##### Comparision
+brand, price, clothe = predictions(indices)
+if nav=="Comperision":
+   st.write(print('Predicted brand: {}, Predicted Clothes: {}, Predicted price: {}'.format(brand, clothe, price)))
+   brand, price, clothe = features(data_path + input_image)
+   st.write(print('Actual brand: {}, Actual Clothes: {}, Actual price: {}'.format(brand, clothe, price)))
+
